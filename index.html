@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JXT Clothing Brand | Official Store</title>
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <style>
+        :root { --black: #0e0e0e; --gold: #d4af37; --white: #ffffff; --gray: #f4f4f4; }
+        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: var(--gray); color: var(--black); }
+        
+        /* Navigation */
+        nav { background: var(--black); color: white; padding: 1.5rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .logo { font-size: 1.5rem; font-weight: 900; letter-spacing: 3px; }
+        .admin-btn { font-size: 10px; color: #555; cursor: pointer; border: none; background: none; }
+
+        /* Store Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
+        
+        /* Product Cards */
+        .card { background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; }
+        .card img { width: 100%; height: 350px; object-fit: cover; }
+        .info { padding: 1.5rem; text-align: center; }
+        .price { font-size: 1.25rem; font-weight: bold; margin: 0.5rem 0; color: var(--black); }
+        
+        /* Buttons */
+        .buy-btn { background: var(--black); color: white; border: none; width: 100%; padding: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .buy-btn:hover { background: #333; }
+        .del-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; position: absolute; top: 10px; right: 10px; cursor: pointer; border-radius: 3px; display: none; }
+
+        /* Admin Panel Styling */
+        #admin-panel { display: none; background: #fff; padding: 2rem; border: 2px solid var(--black); margin-bottom: 2rem; border-radius: 8px; }
+        .form-group input { display: block; width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">JXT CLOTHING</div>
+    <button class="admin-btn" onclick="openAdmin()">ADMIN LOGIN</button>
+</nav>
+
+<div class="container">
+    <div id="admin-panel">
+        <h3>Admin Dashboard</h3>
+        <div class="form-group">
+            <input type="text" id="pName" placeholder="Product Name (e.g. JXT Black Hoodie)">
+            <input type="number" id="pPrice" placeholder="Price in Naira">
+            <input type="text" id="pImg" placeholder="Image URL (Direct link)">
+            <button class="buy-btn" onclick="publishStore()" style="background: #28a745;">Publish to Store</button>
+        </div>
+    </div>
+
+    <div class="grid" id="store-front">
+        <p>Connecting to JXT servers...</p>
+    </div>
+</div>
+
+<script>
+    // --- SETTINGS ---
+    const ABLY_KEY = '8aNVog.se0xuQ:cPGNxEHS92b0xGqx6PpT1jRNDCVD0Y5DFX_6A45BtkA';
+    const PAYSTACK_PUB_KEY = 'pk_test_your_actual_key_here'; // Replace with your Paystack key
+    const ADMIN_PASS = "JXT2026"; 
+
+    const ably = new Ably.Realtime(ABLY_KEY);
+    const channel = ably.channels.get('jxt-live-store', { params: { rewind: '1' } });
+    let currentInventory = [];
+    let isAdmin = false;
+
+    // --- LOAD STORE ---
+    channel.subscribe('update', (message) => {
+        currentInventory = message.data;
+        renderStore();
+    });
+
+    function renderStore() {
+        const display = document.getElementById('store-front');
+        if (currentInventory.length === 0) {
+            display.innerHTML = "<p>New collection coming soon.</p>";
+            return;
+        }
+
+        display.innerHTML = currentInventory.map((item, index) => `
+            <div class="card">
+                <button class="del-btn" style="display: ${isAdmin ? 'block' : 'none'}" onclick="deleteItem(${index})">Remove</button>
+                <img src="${item.img}" onerror="this.src='https://via.placeholder.com/350x450?text=No+Image'">
+                <div class="info">
+                    <h3>${item.name}</h3>
+                    <div class="price">₦${Number(item.price).toLocaleString()}</div>
+                    <button class="buy-btn" onclick="startPayment('${item.price}', '${item.name}')">ADD TO CART</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- ADMIN ACTIONS ---
+    function openAdmin() {
+        if (prompt("Enter Staff Access Code:") === ADMIN_PASS) {
+            isAdmin = true;
+            document.getElementById('admin-panel').style.display = "block";
+            renderStore(); // Refresh to show delete buttons
+        }
+    }
+
+    function publishStore() {
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pImg').value;
+
+        if (!name || !price || !img) return alert("Fill all fields");
+
+        currentInventory.push({ name, price, img });
+        channel.publish('update', currentInventory);
+        
+        // Clear inputs
+        document.getElementById('pName').value = '';
+        document.getElementById('pPrice').value = '';
+        document.getElementById('pImg').value = '';
+    }
+
+    function deleteItem(index) {
+        if (confirm("Delete this item from store?")) {
+            currentInventory.splice(index, 1);
+            channel.publish('update', currentInventory);
+        }
+    }
+
+    // --- PAYMENT ---
+    function startPayment(amount, productName) {
+        const email = prompt(`Buying: ${productName}. Enter email for receipt:`);
+        if (!email) return;
+
+        let handler = PaystackPop.setup({
+            key: PAYSTACK_PUB_KEY,
+            email: email,
+            amount: amount * 100, // Convert to Kobo
+            currency: 'NGN',
+            callback: function(response) {
+                alert('Success! Order Ref: ' + response.reference);
+            }
+        });
+        handler.openIframe();
+    }
+</script>
+</body>
+</html>
