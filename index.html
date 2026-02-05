@@ -3,146 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JXT Clothing Brand | Official Store</title>
+    <title>JXT Clothing | Premium Fashion Store</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <script src="https://js.paystack.co/v1/inline.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --black: #0e0e0e; --gold: #d4af37; --white: #ffffff; --gray: #f4f4f4; }
-        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: var(--gray); color: var(--black); }
+        :root { --primary: #f68b1e; --dark: #1a1a1a; --light: #ffffff; --bg: #f1f1f2; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background: var(--bg); color: var(--dark); overflow-x: hidden; }
         
-        /* Navigation */
-        nav { background: var(--black); color: white; padding: 1.5rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .logo { font-size: 1.5rem; font-weight: 900; letter-spacing: 3px; }
-        .admin-btn { font-size: 10px; color: #555; cursor: pointer; border: none; background: none; }
+        /* Navigation & Header */
+        header { background: var(--dark); color: white; position: sticky; top: 0; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; max-width: 1400px; margin: auto; }
+        .logo { font-weight: 900; font-size: 1.8rem; letter-spacing: -1px; cursor: pointer; }
+        .logo span { color: var(--primary); }
+        .nav-tools { display: flex; align-items: center; gap: 20px; }
+        .cart-icon { position: relative; cursor: pointer; background: #333; padding: 8px 15px; border-radius: 5px; }
+        .cart-count { background: var(--primary); color: white; border-radius: 50%; padding: 2px 7px; font-size: 12px; position: absolute; top: -5px; right: -5px; }
 
-        /* Store Container */
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
-        
-        /* Product Cards */
-        .card { background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; }
-        .card img { width: 100%; height: 350px; object-fit: cover; }
-        .info { padding: 1.5rem; text-align: center; }
-        .price { font-size: 1.25rem; font-weight: bold; margin: 0.5rem 0; color: var(--black); }
-        
-        /* Buttons */
-        .buy-btn { background: var(--black); color: white; border: none; width: 100%; padding: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .buy-btn:hover { background: #333; }
-        .del-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; position: absolute; top: 10px; right: 10px; cursor: pointer; border-radius: 3px; display: none; }
+        /* Jumia Style Hero */
+        .hero { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200'); background-size: cover; background-position: center; height: 350px; display: flex; align-items: center; justify-content: center; color: white; text-align: center; margin-bottom: 30px; }
+        .hero h1 { font-size: 3rem; margin: 0; font-weight: 900; text-transform: uppercase; }
 
-        /* Admin Panel Styling */
-        #admin-panel { display: none; background: #fff; padding: 2rem; border: 2px solid var(--black); margin-bottom: 2rem; border-radius: 8px; }
-        .form-group input { display: block; width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        /* Store Body */
+        .main-container { max-width: 1400px; margin: auto; display: flex; gap: 20px; padding: 0 5%; }
+        .sidebar { width: 250px; background: white; padding: 20px; border-radius: 5px; height: fit-content; display: none; } /* Hidden on mobile */
+        @media (min-width: 900px) { .sidebar { display: block; } }
+
+        .content { flex: 1; }
+        .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; font-size: 1rem; }
+
+        /* Product Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        .card { background: white; border-radius: 4px; padding: 10px; position: relative; border: 1px solid transparent; }
+        .card:hover { border: 1px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: 250px; object-fit: cover; border-radius: 2px; }
+        .badge { position: absolute; top: 15px; left: 15px; background: var(--primary); color: white; padding: 3px 8px; font-size: 10px; font-weight: bold; border-radius: 3px; }
+        .info { padding: 10px 0; }
+        .info h3 { font-size: 0.9rem; margin: 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .price { font-size: 1.2rem; font-weight: 700; margin: 5px 0; }
+        
+        /* Cart Sidebar */
+        #cart-panel { position: fixed; right: -400px; top: 0; width: 350px; height: 100%; background: white; z-index: 3000; box-shadow: -5px 0 15px rgba(0,0,0,0.2); padding: 20px; transition: 0.4s; }
+        #cart-panel.open { right: 0; }
+        .cart-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 0.9rem; }
+
+        /* General Buttons */
+        .btn-buy { background: var(--primary); color: white; border: none; width: 100%; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; box-shadow: 0 2px 5px rgba(246, 139, 30, 0.3); }
+        .btn-buy:hover { background: #e07b1a; }
+        .btn-admin { font-size: 11px; color: #888; border: 1px solid #444; background: none; padding: 5px 10px; cursor: pointer; margin-top: 10px; }
+
+        /* Admin Overlay */
+        #admin-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; }
+        .admin-modal { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; }
+        .admin-modal input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
-<nav>
-    <div class="logo">JXT CLOTHING</div>
-    <button class="admin-btn" onclick="openAdmin()">ADMIN LOGIN</button>
-</nav>
-
-<div class="container">
-    <div id="admin-panel">
-        <h3>Admin Dashboard</h3>
-        <div class="form-group">
-            <input type="text" id="pName" placeholder="Product Name (e.g. JXT Black Hoodie)">
-            <input type="number" id="pPrice" placeholder="Price in Naira">
-            <input type="text" id="pImg" placeholder="Image URL (Direct link)">
-            <button class="buy-btn" onclick="publishStore()" style="background: #28a745;">Publish to Store</button>
+<header>
+    <div class="top-nav">
+        <div class="logo" onclick="location.reload()">JXT<span>CLOTHING</span></div>
+        <div class="nav-tools">
+            <button class="btn-admin" onclick="checkAdmin()">STAFF</button>
+            <div class="cart-icon" onclick="toggleCart()">
+                🛒 <span class="cart-count" id="cart-count">0</span>
+            </div>
         </div>
     </div>
+</header>
 
-    <div class="grid" id="store-front">
-        <p>Connecting to JXT servers...</p>
+<div class="hero">
+    <div>
+        <h1>Exclusive Collection</h1>
+        <p>Stay Classy with JXT Originality</p>
+    </div>
+</div>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <h4>CATEGORIES</h4>
+        <p style="color: var(--primary); font-weight: bold;">All Collections</p>
+        <p>Men's Wear</p>
+        <p>Streetwear</p>
+        <p>Accessories</p>
+        <hr>
+        <small>Free Delivery on orders over ₦50,000</small>
+    </aside>
+
+    <main class="content">
+        <input type="text" class="search-bar" id="search" placeholder="Search products, brands and categories..." onkeyup="filterProducts()">
+        <div class="grid" id="product-grid">
+            </div>
+    </main>
+</div>
+
+<div id="cart-panel">
+    <div style="display:flex; justify-content: space-between;">
+        <h2>Your Cart</h2>
+        <button onclick="toggleCart()" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
+    </div>
+    <div id="cart-items"></div>
+    <div style="margin-top:20px; border-top: 2px solid #000; padding-top:10px;">
+        <h3 id="cart-total">Total: ₦0</h3>
+        <button class="btn-buy" onclick="checkout()" style="height:50px; font-size:1.1rem;">PROCEED TO CHECKOUT</button>
+    </div>
+</div>
+
+<div id="admin-overlay">
+    <div class="admin-modal">
+        <h3>Add New Product</h3>
+        <input type="text" id="pName" placeholder="Product Name">
+        <input type="number" id="pPrice" placeholder="Price (NGN)">
+        <input type="text" id="pImg" placeholder="Image URL">
+        <button class="btn-buy" onclick="pushToAbly()">Save to Cloud</button>
+        <button onclick="document.getElementById('admin-overlay').style.display='none'" style="width:100%; margin-top:10px; background:none; border:none; cursor:pointer;">Cancel</button>
     </div>
 </div>
 
 <script>
-    // --- SETTINGS ---
     const ABLY_KEY = '8aNVog.se0xuQ:cPGNxEHS92b0xGqx6PpT1jRNDCVD0Y5DFX_6A45BtkA';
-    const PAYSTACK_PUB_KEY = 'pk_test_your_actual_key_here'; // Replace with your Paystack key
-    const ADMIN_PASS = "JXT2026"; 
-
+    const PAYSTACK_PUB = 'Pk_test_5aa638d9e5c986af308467e9454f88b73ad0d0bd';
+    
     const ably = new Ably.Realtime(ABLY_KEY);
     const channel = ably.channels.get('jxt-live-store', { params: { rewind: '1' } });
-    let currentInventory = [];
+    
+    let products = [];
+    let cart = [];
     let isAdmin = false;
 
-    // --- LOAD STORE ---
-    channel.subscribe('update', (message) => {
-        currentInventory = message.data;
-        renderStore();
+    // --- Core Logic ---
+    channel.subscribe('update', (msg) => {
+        products = msg.data;
+        renderProducts(products);
     });
 
-    function renderStore() {
-        const display = document.getElementById('store-front');
-        if (currentInventory.length === 0) {
-            display.innerHTML = "<p>New collection coming soon.</p>";
-            return;
-        }
-
-        display.innerHTML = currentInventory.map((item, index) => `
+    function renderProducts(data) {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = data.map((p, i) => `
             <div class="card">
-                <button class="del-btn" style="display: ${isAdmin ? 'block' : 'none'}" onclick="deleteItem(${index})">Remove</button>
-                <img src="${item.img}" onerror="this.src='https://via.placeholder.com/350x450?text=No+Image'">
+                <div class="badge">Official JXT</div>
+                <img src="${p.img}" onerror="this.src='https://via.placeholder.com/300x400?text=JXT+Clothing'">
                 <div class="info">
-                    <h3>${item.name}</h3>
-                    <div class="price">₦${Number(item.price).toLocaleString()}</div>
-                    <button class="buy-btn" onclick="startPayment('${item.price}', '${item.name}')">ADD TO CART</button>
+                    <h3>${p.name}</h3>
+                    <div class="price">₦${Number(p.price).toLocaleString()}</div>
+                    <button class="btn-buy" onclick="addToCart(${i})">ADD TO CART</button>
+                    ${isAdmin ? `<button onclick="deleteItem(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:10px; margin-top:10px;">Remove Item</button>` : ''}
                 </div>
             </div>
         `).join('');
     }
 
-    // --- ADMIN ACTIONS ---
-    function openAdmin() {
-        if (prompt("Enter Staff Access Code:") === ADMIN_PASS) {
-            isAdmin = true;
-            document.getElementById('admin-panel').style.display = "block";
-            renderStore(); // Refresh to show delete buttons
-        }
+    // --- Search Feature ---
+    function filterProducts() {
+        const query = document.getElementById('search').value.toLowerCase();
+        const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+        renderProducts(filtered);
     }
 
-    function publishStore() {
-        const name = document.getElementById('pName').value;
-        const price = document.getElementById('pPrice').value;
-        const img = document.getElementById('pImg').value;
+    // --- Cart Management ---
+    function addToCart(index) {
+        cart.push(products[index]);
+        updateCartUI();
+        if(!document.getElementById('cart-panel').classList.contains('open')) toggleCart();
+    }
 
-        if (!name || !price || !img) return alert("Fill all fields");
-
-        currentInventory.push({ name, price, img });
-        channel.publish('update', currentInventory);
+    function updateCartUI() {
+        document.getElementById('cart-count').innerText = cart.length;
+        const cartDiv = document.getElementById('cart-items');
+        let total = 0;
         
-        // Clear inputs
-        document.getElementById('pName').value = '';
-        document.getElementById('pPrice').value = '';
-        document.getElementById('pImg').value = '';
+        cartDiv.innerHTML = cart.map((item, i) => {
+            total += parseInt(item.price);
+            return `<div class="cart-item">
+                <span>${item.name}</span>
+                <strong>₦${Number(item.price).toLocaleString()}</strong>
+                <button onclick="cart.splice(${i},1); updateCartUI()" style="border:none; color:red; background:none; cursor:pointer;">x</button>
+            </div>`;
+        }).join('');
+        
+        document.getElementById('cart-total').innerText = "Total: ₦" + total.toLocaleString();
     }
 
-    function deleteItem(index) {
-        if (confirm("Delete this item from store?")) {
-            currentInventory.splice(index, 1);
-            channel.publish('update', currentInventory);
-        }
+    function toggleCart() {
+        document.getElementById('cart-panel').classList.toggle('open');
     }
 
-    // --- PAYMENT ---
-    function startPayment(amount, productName) {
-        const email = prompt(`Buying: ${productName}. Enter email for receipt:`);
-        if (!email) return;
+    // --- Payment ---
+    function checkout() {
+        if(cart.length === 0) return alert("Your cart is empty");
+        const total = cart.reduce((acc, item) => acc + parseInt(item.price), 0);
+        const email = prompt("Enter your email for the order confirmation:");
+        
+        if(!email) return;
 
         let handler = PaystackPop.setup({
-            key: PAYSTACK_PUB_KEY,
+            key: PAYSTACK_PUB,
             email: email,
-            amount: amount * 100, // Convert to Kobo
-            currency: 'NGN',
-            callback: function(response) {
-                alert('Success! Order Ref: ' + response.reference);
+            amount: total * 100,
+            currency: "NGN",
+            callback: (res) => {
+                alert("Order Successful! Reference: " + res.reference);
+                cart = [];
+                updateCartUI();
+                toggleCart();
             }
         });
         handler.openIframe();
     }
+
+    // --- Admin Dashboard ---
+    function checkAdmin() {
+        if(prompt("Staff Password:") === "JXT2026") {
+            isAdmin = true;
+            document.getElementById('admin-overlay').style.display = 'flex';
+            renderProducts(products);
+        }
+    }
+
+    function pushToAbly() {
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pImg').value;
+        if(!name || !price || !img) return alert("All fields required");
+
+        products.push({ name, price, img });
+        channel.publish('update', products);
+        document.getElementById('admin-overlay').style.display = 'none';
+    }
+
+    function deleteItem(i) {
+        if(confirm("Delete this?")) {
+            products.splice(i, 1);
+            channel.publish('update', products);
+        }
+    }
 </script>
+
 </body>
 </html>
